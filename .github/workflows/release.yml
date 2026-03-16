@@ -38,7 +38,8 @@ jobs:
         shell: bash
 
       - name: Build MSI Package
-        run: ./gradlew packageMsi -PappVersion=${{ env.TAG_NAME }} # 태그 버전을 앱 버전으로 전달
+        run: ./gradlew packageMsi -PappVersion=${{ env.TAG_NAME }}
+        shell: bash
 
       - name: Find MSI File
         id: find_msi
