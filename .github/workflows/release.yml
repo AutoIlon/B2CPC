@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*.*.*' # v1.0.0 같은 태그를 푸시할 때만 실행됩니다.
 
+permissions:
+  contents: write
+
 jobs:
   build_and_release:
     runs-on: windows-latest
