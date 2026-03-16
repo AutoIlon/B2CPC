@@ -5,6 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -121,6 +124,8 @@ fun DashboardContent() {
     var dashboardSearchQuery by remember { mutableStateOf("") }
     // 정렬 관리 상태
     var sortMode by remember { mutableStateOf("최신순") }
+    // 보기 모드 상태: LIST, GRID, COMPACT
+    var viewMode by remember { mutableStateOf("LIST") }
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -228,122 +233,180 @@ fun DashboardContent() {
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 24.dp)
+    ) {
         if (filterMode == "ALL") {
-            Text("대시보드 요약", style = MaterialTheme.typography.h4, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(24.dp))
+            // 대시보드 요약 헤더
+            item {
+                Text("대시보드 요약", style = MaterialTheme.typography.h4, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // 메인 통계 카드
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                DashboardStatCard("총 관리 상품", "$totalProducts 개", Icons.Default.Inventory, Color(0xFF3498DB), Modifier.weight(1f)) { filterMode = "ALL" }
-                DashboardStatCard("임박 상품 (7일 내)", "$imminentProducts 개", Icons.Default.Warning, Color(0xFFE67E22), Modifier.weight(1f)) { filterMode = "IMMINENT" }
-                DashboardStatCard("유통기한 경과", "$expiredProducts 개", Icons.Default.Error, Color(0xFFE74C3C), Modifier.weight(1f)) { filterMode = "EXPIRED" }
-                DashboardStatCard("숨김 처리", "$hiddenProducts 개", Icons.Default.VisibilityOff, Color(0xFF95A5A6), Modifier.weight(1f)) { filterMode = "HIDDEN" }
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    DashboardStatCard("총 관리 상품", "$totalProducts 개", Icons.Default.Inventory, Color(0xFF3498DB), Modifier.weight(1f)) { filterMode = "ALL" }
+                    DashboardStatCard("임박 상품 (7일 내)", "$imminentProducts 개", Icons.Default.Warning, Color(0xFFE67E22), Modifier.weight(1f)) { filterMode = "IMMINENT" }
+                    DashboardStatCard("유통기한 경과", "$expiredProducts 개", Icons.Default.Error, Color(0xFFE74C3C), Modifier.weight(1f)) { filterMode = "EXPIRED" }
+                    DashboardStatCard("숨김 처리", "$hiddenProducts 개", Icons.Default.VisibilityOff, Color(0xFF95A5A6), Modifier.weight(1f)) { filterMode = "HIDDEN" }
+                }
             }
 
             // 카테고리별 통계
             if (categoryStats.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text("카테고리별 현황", style = MaterialTheme.typography.h6, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(12.dp))
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("카테고리별 현황", style = MaterialTheme.typography.h6, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                val scrollState = rememberScrollState()
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                            .horizontalScroll(scrollState)
-                            .padding(bottom = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        categoryStats.forEach { (cat, total, imminentExpired) ->
-                            CategoryStatCard(
-                                categoryName = cat.name,
-                                totalCount = total,
-                                imminentCount = imminentExpired.first,
-                                expiredCount = imminentExpired.second,
-                                onClick = { filterMode = cat.name }
-                            )
+                    val scrollState = rememberScrollState()
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                                .horizontalScroll(scrollState)
+                                .padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            categoryStats.forEach { (cat, total, imminentExpired) ->
+                                CategoryStatCard(
+                                    categoryName = cat.name,
+                                    totalCount = total,
+                                    imminentCount = imminentExpired.first,
+                                    expiredCount = imminentExpired.second,
+                                    onClick = { filterMode = cat.name }
+                                )
+                            }
                         }
+                        
+                        androidx.compose.foundation.HorizontalScrollbar(
+                            modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 4.dp),
+                            adapter = androidx.compose.foundation.rememberScrollbarAdapter(scrollState)
+                        )
                     }
-                    
-                    androidx.compose.foundation.HorizontalScrollbar(
-                        modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 4.dp),
-                        adapter = androidx.compose.foundation.rememberScrollbarAdapter(scrollState)
-                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("최근 등록 상품", style = MaterialTheme.typography.h6, fontWeight = FontWeight.Bold)
-                
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    var sortExpanded by remember { mutableStateOf(false) }
-                    Box {
-                        TextButton(onClick = { sortExpanded = true }) {
-                            Text(sortMode, color = Color(0xFF2C3E50), fontWeight = FontWeight.Bold)
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF2C3E50))
-                        }
-                        DropdownMenu(
-                            expanded = sortExpanded,
-                            onDismissRequest = { sortExpanded = false }
+            // 최근 등록 상품 헤더
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("최근 등록 상품", style = MaterialTheme.typography.h6, fontWeight = FontWeight.Bold)
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // 보기 모드 전환 버튼
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFF0F0F0),
+                            modifier = Modifier.padding(end = 12.dp)
                         ) {
-                            listOf("최신순", "이름순", "유통기한 임박순").forEach { sortOption ->
-                                DropdownMenuItem(onClick = {
-                                    sortMode = sortOption
-                                    sortExpanded = false
-                                }) {
-                                    Text(sortOption)
+                            Row(modifier = Modifier.padding(2.dp)) {
+                                IconButton(
+                                    onClick = { viewMode = "LIST" },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.ViewList,
+                                        contentDescription = "리스트",
+                                        tint = if (viewMode == "LIST") Color(0xFF3498DB) else Color.Gray,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { viewMode = "GRID" },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.GridView,
+                                        contentDescription = "그리드",
+                                        tint = if (viewMode == "GRID") Color(0xFF3498DB) else Color.Gray,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { viewMode = "COMPACT" },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.TableRows,
+                                        contentDescription = "컴팩트",
+                                        tint = if (viewMode == "COMPACT") Color(0xFF3498DB) else Color.Gray,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                             }
                         }
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
 
-                    OutlinedTextField(
-                        value = dashboardSearchQuery,
-                        onValueChange = { dashboardSearchQuery = it },
-                        placeholder = { Text("상품명, 바코드 검색") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                        singleLine = true,
-                        modifier = Modifier.height(50.dp).width(250.dp),
-                        shape = RoundedCornerShape(25.dp),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            focusedBorderColor = Color(0xFF3498DB),
-                            unfocusedBorderColor = Color.LightGray
+                        var sortExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            TextButton(onClick = { sortExpanded = true }) {
+                                Text(sortMode, color = Color(0xFF2C3E50), fontWeight = FontWeight.Bold)
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF2C3E50))
+                            }
+                            DropdownMenu(
+                                expanded = sortExpanded,
+                                onDismissRequest = { sortExpanded = false }
+                            ) {
+                                listOf("최신순", "이름순", "유통기한 임박순").forEach { sortOption ->
+                                    DropdownMenuItem(onClick = {
+                                        sortMode = sortOption
+                                        sortExpanded = false
+                                    }) {
+                                        Text(sortOption)
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        OutlinedTextField(
+                            value = dashboardSearchQuery,
+                            onValueChange = { dashboardSearchQuery = it },
+                            placeholder = { Text("상품명, 바코드 검색") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                            singleLine = true,
+                            modifier = Modifier.height(50.dp).width(250.dp),
+                            shape = RoundedCornerShape(25.dp),
+                            colors = TextFieldDefaults.outlinedTextFieldColors(
+                                focusedBorderColor = Color(0xFF3498DB),
+                                unfocusedBorderColor = Color.LightGray
+                            )
                         )
-                    )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
         } else {
             // 필터링 모드 뷰 헤더
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(
-                    onClick = { filterMode = "ALL" },
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF2C3E50))
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("메인으로 돌아가기", fontWeight = FontWeight.Bold)
+                    TextButton(
+                        onClick = { filterMode = "ALL" },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF2C3E50))
+                    ) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("메인으로 돌아가기", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    val filterTitle = when (filterMode) {
+                        "IMMINENT" -> "임박 상품 목록 (7일 내)"
+                        "EXPIRED" -> "유통기한 경과 목록"
+                        "HIDDEN" -> "숨김 처리된 상품"
+                        else -> "카테고리: $filterMode"
+                    }
+                    Text(filterTitle, style = MaterialTheme.typography.h5, fontWeight = FontWeight.Bold)
                 }
-                Spacer(modifier = Modifier.width(16.dp))
-                val filterTitle = when (filterMode) {
-                    "IMMINENT" -> "임박 상품 목록 (7일 내)"
-                    "EXPIRED" -> "유통기한 경과 목록"
-                    "HIDDEN" -> "숨김 처리된 상품"
-                    else -> "카테고리: $filterMode"
-                }
-                Text(filterTitle, style = MaterialTheme.typography.h5, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(12.dp))
             }
-            Spacer(modifier = Modifier.height(24.dp))
         }
 
         // 상품 카드 목록 (검색 및 정렬 필터 적용)
@@ -363,25 +426,70 @@ fun DashboardContent() {
             sortedProducts
         }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
-        ) {
-            items(if (filterMode == "ALL" && dashboardSearchQuery.isBlank()) finalProducts.take(15) else finalProducts) { product ->
-                ProductCard(
-                    product = product,
-                    onEdit = {
-                        selectedProduct = it
-                        showEditDialog = true
-                    },
-                    onDelete = {
-                        coroutineScope.launch {
-                            repository.deleteProduct(it.id)
-                            products = repository.getProducts()
-                        }
+        val displayProducts = if (filterMode == "ALL" && dashboardSearchQuery.isBlank()) finalProducts.take(15) else finalProducts
+
+        if (viewMode == "GRID") {
+            // 그리드 모드: LazyColumn 안에 수동 그리드 배치
+            val chunkedProducts = displayProducts.chunked(3)
+            items(chunkedProducts) { rowProducts ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowProducts.forEach { product ->
+                        GridProductCard(
+                            product = product,
+                            onEdit = {
+                                selectedProduct = it
+                                showEditDialog = true
+                            },
+                            onDelete = {
+                                coroutineScope.launch {
+                                    repository.deleteProduct(it.id)
+                                    products = repository.getProducts()
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                )
+                    // 빈 공간 채우기 (3열 미만일 때)
+                    repeat(3 - rowProducts.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        } else {
+            // 리스트/컴팩트 모드
+            items(displayProducts) { product ->
+                if (viewMode == "COMPACT") {
+                    CompactProductCard(
+                        product = product,
+                        onEdit = {
+                            selectedProduct = it
+                            showEditDialog = true
+                        },
+                        onDelete = {
+                            coroutineScope.launch {
+                                repository.deleteProduct(it.id)
+                                products = repository.getProducts()
+                            }
+                        }
+                    )
+                } else {
+                    ProductCard(
+                        product = product,
+                        onEdit = {
+                            selectedProduct = it
+                            showEditDialog = true
+                        },
+                        onDelete = {
+                            coroutineScope.launch {
+                                repository.deleteProduct(it.id)
+                                products = repository.getProducts()
+                            }
+                        }
+                    )
+                }
             }
         }
     }
