@@ -401,26 +401,7 @@ fun main() {
                 }
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    val hScrollState = rememberScrollState()
-                    val vScrollState = rememberScrollState()
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .padding(end = 12.dp, bottom = 12.dp)
-                        .horizontalScroll(hScrollState)
-                        .verticalScroll(vScrollState)
-                    ) {
-                        Box(modifier = Modifier.sizeIn(minWidth = 1400.dp, minHeight = 800.dp).fillMaxSize()) {
-                            App(onMinimizeToTray = { isVisible = false })
-                        }
-                    }
-                    VerticalScrollbar(
-                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                        adapter = rememberScrollbarAdapter(vScrollState)
-                    )
-                    HorizontalScrollbar(
-                        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                        adapter = rememberScrollbarAdapter(hScrollState)
-                    )
+                    App(onMinimizeToTray = { isVisible = false })
                 }
             }
         }
