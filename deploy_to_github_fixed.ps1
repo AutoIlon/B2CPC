@@ -3,29 +3,29 @@
 )
 
 # ============================================================
-#  B2CPC 로컬 빌드 & GitHub Release 자동 배포 스크립트 (강화판)
+#  B2CPC 濡쒖뺄 鍮뚮뱶 & GitHub Release ?먮룞 諛고룷 ?ㅽ겕由쏀듃 (媛뺥솕??
 # ============================================================
 
 $token = "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"
 $owner = "AutoIlon"
 $repo = "B2CPC"
 
-# ── 색상 헬퍼 함수 ──
+# ?? ?됱긽 ?ы띁 ?⑥닔 ??
 function Write-Step($step, $msg) { Write-Host "`n[$step] $msg" -ForegroundColor Cyan }
 function Write-Ok($msg)          { Write-Host "  OK: $msg" -ForegroundColor Green }
 function Write-Err($msg)         { Write-Host "  ERROR: $msg" -ForegroundColor Red }
 function Write-Warn($msg)        { Write-Host "  WARNING: $msg" -ForegroundColor Yellow }
 function Write-Info($msg)        { Write-Host "  $msg" -ForegroundColor Gray }
 
-# ── 헤더 출력 ──
+# ?? ?ㅻ뜑 異쒕젰 ??
 Write-Host ""
 Write-Host "  =============================================" -ForegroundColor Cyan
 Write-Host "    B2CPC Local Build & Deploy (Enhanced)" -ForegroundColor White
 Write-Host "  =============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ── 0단계: 최신 버전 자동 감지 ──
-Write-Step "0/6" "최신 버전 확인 중..."
+# ?? 0?④퀎: 理쒖떊 踰꾩쟾 ?먮룞 媛먯? ??
+Write-Step "0/6" "理쒖떊 踰꾩쟾 ?뺤씤 以?.."
 try {
     $headers = @{
         "Authorization" = "token $token"
@@ -34,74 +34,73 @@ try {
     $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/$owner/$repo/releases?per_page=5" -Method Get -Headers $headers -ErrorAction SilentlyContinue
     if ($releases -and $releases.Count -gt 0) {
         $latestTag = $releases[0].tag_name
-        Write-Ok "현재 최신 릴리즈: $latestTag"
+        Write-Ok "?꾩옱 理쒖떊 由대━利? $latestTag"
         
-        # 자동 다음 버전 제안
+        # ?먮룞 ?ㅼ쓬 踰꾩쟾 ?쒖븞
         $cleanVersion = $latestTag -replace '^v', ''
         $parts = $cleanVersion.Split('.')
         if ($parts.Count -ge 3) {
             $parts[2] = [string]([int]$parts[2] + 1)
             $suggestedVersion = $parts -join '.'
-            Write-Info "다음 추천 버전: $suggestedVersion"
+            Write-Info "?ㅼ쓬 異붿쿇 踰꾩쟾: $suggestedVersion"
         }
     } else {
-        Write-Info "기존 릴리즈 없음. 첫 배포입니다."
+        Write-Info "湲곗〈 由대━利??놁쓬. 泥?諛고룷?낅땲??"
         $suggestedVersion = "1.0.0"
     }
 } catch {
-    Write-Warn "릴리즈 정보를 가져올 수 없습니다. 네트워크를 확인하세요."
+    Write-Warn "由대━利??뺣낫瑜?媛?몄삱 ???놁뒿?덈떎. ?ㅽ듃?뚰겕瑜??뺤씤?섏꽭??"
     $suggestedVersion = "1.0.0"
 }
 
-# ── 1단계: 버전 입력 ──
+# ?? 1?④퀎: 踰꾩쟾 ?낅젰 ??
 Write-Host ""
 if ($version -eq "") {
-    $defaultMsg = if ($suggestedVersion) { " (Enter시 추천: $suggestedVersion)" } else { "" }
-    $version = Read-Host "  배포할 버전을 입력하세요$defaultMsg"
+    $defaultMsg = if ($suggestedVersion) { " (Enter??異붿쿇: $suggestedVersion)" } else { "" }
+    $version = Read-Host "  諛고룷??踰꾩쟾???낅젰?섏꽭??defaultMsg"
     if ($version -eq "" -and $suggestedVersion) {
         $version = $suggestedVersion
     }
 }
 
 if ($version -eq "") {
-    Write-Err "버전을 입력하지 않았습니다!"
-    Read-Host "Enter를 눌러 종료"
+    Write-Err "踰꾩쟾???낅젰?섏? ?딆븯?듬땲??"
+    Read-Host "Enter瑜??뚮윭 醫낅즺"
     exit 1
 }
 
-# 버전 형식 검증
-if ($version -notmatch '^\d+\.\d+\.\d+$') {
-    Write-Err "버전 형식이 올바르지 않습니다! (예: 1.0.11)"
-    Read-Host "Enter를 눌러 종료"
+# 踰꾩쟾 ?뺤떇 寃利?if ($version -notmatch '^\d+\.\d+\.\d+$') {
+    Write-Err "踰꾩쟾 ?뺤떇???щ컮瑜댁? ?딆뒿?덈떎! (?? 1.0.11)"
+    Read-Host "Enter瑜??뚮윭 醫낅즺"
     exit 1
 }
 
 Write-Host ""
 Write-Host "  ==============================================" -ForegroundColor Yellow
-Write-Host "    배포 버전: v$version" -ForegroundColor White
+Write-Host "    諛고룷 踰꾩쟾: v$version" -ForegroundColor White
 Write-Host "  ==============================================" -ForegroundColor Yellow
 Write-Host ""
 
-$confirm = Read-Host "  위 버전으로 배포를 진행할까요? (Y/N)"
+$confirm = Read-Host "  ??踰꾩쟾?쇰줈 諛고룷瑜?吏꾪뻾?좉퉴?? (Y/N)"
 if ($confirm -ne "Y" -and $confirm -ne "y") {
-    Write-Host "`n  배포가 취소되었습니다." -ForegroundColor Gray
-    Read-Host "Enter를 눌러 종료"
+    Write-Host "`n  諛고룷媛 痍⑥냼?섏뿀?듬땲??" -ForegroundColor Gray
+    Read-Host "Enter瑜??뚮윭 醫낅즺"
     exit 0
 }
 
-# ── 2단계: 이전 빌드 정리 ──
-Write-Step "1/6" "이전 빌드 파일 정리 중..."
+# ?? 2?④퀎: ?댁쟾 鍮뚮뱶 ?뺣━ ??
+Write-Step "1/6" "?댁쟾 鍮뚮뱶 ?뚯씪 ?뺣━ 以?.."
 $buildDir = "build\compose\binaries"
 if (Test-Path $buildDir) {
     Remove-Item -Path $buildDir -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Ok "이전 빌드 파일 삭제 완료"
+    Write-Ok "?댁쟾 鍮뚮뱶 ?뚯씪 ??젣 ?꾨즺"
 } else {
-    Write-Info "정리할 빌드 파일 없음"
+    Write-Info "?뺣━??鍮뚮뱶 ?뚯씪 ?놁쓬"
 }
 
-# ── 3단계: EXE 빌드 ──
-Write-Step "2/6" "Windows EXE 빌드 시작 (v$version)..."
-Write-Info "이 단계는 몇 분 정도 소요될 수 있습니다..."
+# ?? 3?④퀎: EXE 鍮뚮뱶 ??
+Write-Step "2/6" "Windows EXE 鍮뚮뱶 ?쒖옉 (v$version)..."
+Write-Info "???④퀎??紐?遺??뺣룄 ?뚯슂?????덉뒿?덈떎..."
 $buildStart = Get-Date
 
 .\gradlew.bat packageReleaseExe "-PappVersion=$version"
@@ -110,72 +109,72 @@ $buildEnd = Get-Date
 $buildTime = ($buildEnd - $buildStart).TotalSeconds
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Err "빌드 실패! Gradle 로그를 확인하세요."
-    Read-Host "Enter를 눌러 종료"
+    Write-Err "鍮뚮뱶 ?ㅽ뙣! Gradle 濡쒓렇瑜??뺤씤?섏꽭??"
+    Read-Host "Enter瑜??뚮윭 醫낅즺"
     exit 1
 }
 
-# EXE 파일 자동 탐색
+# EXE ?뚯씪 ?먮룞 ?먯깋
 $exeFiles = Get-ChildItem -Path "build\compose\binaries" -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue
 if ($exeFiles -eq $null -or $exeFiles.Count -eq 0) {
-    Write-Err "빌드된 EXE 파일을 찾을 수 없습니다!"
-    Read-Host "Enter를 눌러 종료"
+    Write-Err "鍮뚮뱶??EXE ?뚯씪??李얠쓣 ???놁뒿?덈떎!"
+    Read-Host "Enter瑜??뚮윭 醫낅즺"
     exit 1
 }
 
 $exePath = $exeFiles[0].FullName
 $exeSize = [math]::Round($exeFiles[0].Length / 1MB, 1)
-Write-Ok "빌드 완료! (소요시간: $([math]::Round($buildTime))초)"
-Write-Ok "파일: $exePath"
-Write-Ok "용량: ${exeSize}MB"
+Write-Ok "鍮뚮뱶 ?꾨즺! (?뚯슂?쒓컙: $([math]::Round($buildTime))珥?"
+Write-Ok "?뚯씪: $exePath"
+Write-Ok "?⑸웾: ${exeSize}MB"
 
-# ── 4단계: Git 커밋 & 푸시 ──
-Write-Step "3/6" "Git 변경사항 확인 중..."
+# ?? 4?④퀎: Git 而ㅻ컠 & ?몄떆 ??
+Write-Step "3/6" "Git 蹂寃쎌궗???뺤씤 以?.."
 $gitStatus = git status --short
 if ($null -eq $gitStatus -or $gitStatus -eq "") {
-    Write-Info "커밋할 변경사항이 없습니다."
+    Write-Info "而ㅻ컠??蹂寃쎌궗??씠 ?놁뒿?덈떎."
 } else {
-    Write-Host "`n[ Git 현재 상태 ]" -ForegroundColor Yellow
+    Write-Host "`n[ Git ?꾩옱 ?곹깭 ]" -ForegroundColor Yellow
     Write-Info "$gitStatus"
-    $gitConfirm = Read-Host "`n  위 변경사항을 커밋하고 푸시할까요? (Y/N)"
+    $gitConfirm = Read-Host "`n  ??蹂寃쎌궗??쓣 而ㅻ컠?섍퀬 ?몄떆?좉퉴?? (Y/N)"
     if ($gitConfirm -eq "Y" -or $gitConfirm -eq "y") {
         git add .
         git commit -m "release: v$version"
         git push origin main
-        Write-Ok "Git 동기화 완료"
+        Write-Ok "Git ?숆린???꾨즺"
     } else {
-        Write-Warn "Git 동기화를 건너뜁니다."
+        Write-Warn "Git ?숆린?붾? 嫄대꼫?곷땲??"
     }
 }
 
-# ── 5단계: Git 태그 생성 ──
-Write-Step "4/6" "Git 태그 확인 중..."
+# ?? 5?④퀎: Git ?쒓렇 ?앹꽦 ??
+Write-Step "4/6" "Git ?쒓렇 ?뺤씤 以?.."
 $existingTag = git tag -l "v$version"
 if ($null -ne $existingTag -and $existingTag -ne "") {
-    Write-Warn "태그 v$version 이(가) 이미 존재합니다."
-    $tagConfirm = Read-Host "  기존 태그를 삭제하고 재생성할까요? (Y/N)"
+    Write-Warn "?쒓렇 v$version ??媛) ?대? 議댁옱?⑸땲??"
+    $tagConfirm = Read-Host "  湲곗〈 ?쒓렇瑜???젣?섍퀬 ?ъ깮?깊븷源뚯슂? (Y/N)"
     if ($tagConfirm -eq "Y" -or $tagConfirm -eq "y") {
         git tag -d "v$version"
         git push --delete origin "v$version"
         git tag "v$version"
         git push origin "v$version"
-        Write-Ok "태그 v$version 재생성 및 푸시 완료"
+        Write-Ok "?쒓렇 v$version ?ъ깮??諛??몄떆 ?꾨즺"
     } else {
-        Write-Warn "태그 작업을 건너뜁니다."
+        Write-Warn "?쒓렇 ?묒뾽??嫄대꼫?곷땲??"
     }
 } else {
-    $tagConfirm = Read-Host "  태그 v$version 을(를) 생성하고 푸시할까요? (Y/N)"
+    $tagConfirm = Read-Host "  ?쒓렇 v$version ??瑜? ?앹꽦?섍퀬 ?몄떆?좉퉴?? (Y/N)"
     if ($tagConfirm -eq "Y" -or $tagConfirm -eq "y") {
         git tag "v$version"
         git push origin "v$version"
-        Write-Ok "태그 v$version 생성 및 푸시 완료"
+        Write-Ok "?쒓렇 v$version ?앹꽦 諛??몄떆 ?꾨즺"
     } else {
-        Write-Warn "태그 작업을 건너뜁니다."
+        Write-Warn "?쒓렇 ?묒뾽??嫄대꼫?곷땲??"
     }
 }
 
-# ── 6단계: GitHub Release 생성 ──
-Write-Step "5/6" "GitHub Release v$version 생성 중..."
+# ?? 6?④퀎: GitHub Release ?앹꽦 ??
+Write-Step "5/6" "GitHub Release v$version ?앹꽦 以?.."
 $releaseHeaders = @{
     "Authorization" = "token $token"
     "Accept" = "application/vnd.github.v3+json"
@@ -193,31 +192,31 @@ try {
     $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$owner/$repo/releases" -Method Post -Headers $releaseHeaders -Body $releaseBody
     $uploadUrl = [string]$response.upload_url
     $uploadUrl = $uploadUrl -replace "\{.*\}", ""
-    Write-Ok "릴리즈 생성 완료! (ID: $($response.id))"
+    Write-Ok "由대━利??앹꽦 ?꾨즺! (ID: $($response.id))"
 } catch {
-    Write-Warn "릴리즈가 이미 존재합니다. 기존 릴리즈에 업로드합니다..."
+    Write-Warn "由대━利덇? ?대? 議댁옱?⑸땲?? 湲곗〈 由대━利덉뿉 ?낅줈?쒗빀?덈떎..."
     try {
         $existing = Invoke-RestMethod -Uri "https://api.github.com/repos/$owner/$repo/releases/tags/v$version" -Method Get -Headers $releaseHeaders
         $uploadUrl = [string]$existing.upload_url
         $uploadUrl = $uploadUrl -replace "\{.*\}", ""
 
-        # 기존 동일한 이름의 asset 삭제
+        # 湲곗〈 ?숈씪???대쫫??asset ??젣
         foreach ($asset in $existing.assets) {
             if ($asset.name -like "*.exe") {
-                Write-Info "기존 EXE 파일 삭제: $($asset.name)"
+                Write-Info "湲곗〈 EXE ?뚯씪 ??젣: $($asset.name)"
                 Invoke-RestMethod -Uri "https://api.github.com/repos/$owner/$repo/releases/assets/$($asset.id)" -Method Delete -Headers $releaseHeaders
             }
         }
-        Write-Ok "기존 릴리즈 사용 준비 완료"
+        Write-Ok "湲곗〈 由대━利??ъ슜 以鍮??꾨즺"
     } catch {
-        Write-Err "릴리즈를 생성하거나 찾을 수 없습니다: $_"
-        Read-Host "Enter를 눌러 종료"
+        Write-Err "由대━利덈? ?앹꽦?섍굅??李얠쓣 ???놁뒿?덈떎: $_"
+        Read-Host "Enter瑜??뚮윭 醫낅즺"
         exit 1
     }
 }
 
-# ── 7단계: EXE 업로드 ──
-Write-Step "6/6" "EXE 파일 업로드 중... (${exeSize}MB - 시간이 걸릴 수 있습니다)"
+# ?? 7?④퀎: EXE ?낅줈????
+Write-Step "6/6" "EXE ?뚯씪 ?낅줈??以?.. (${exeSize}MB - ?쒓컙??嫄몃┫ ???덉뒿?덈떎)"
 
 $uploadHeaders = @{
     "Authorization" = "token $token"
@@ -231,24 +230,24 @@ try {
     $uploadStart = Get-Date
     Invoke-RestMethod -Uri $cleanUrl -Method Post -Headers $uploadHeaders -InFile $exePath -TimeoutSec 1800 | Out-Null
     $uploadTime = ((Get-Date) - $uploadStart).TotalSeconds
-    Write-Ok "업로드 완료! (소요시간: $([math]::Round($uploadTime))초)"
+    Write-Ok "?낅줈???꾨즺! (?뚯슂?쒓컙: $([math]::Round($uploadTime))珥?"
 } catch {
-    Write-Err "업로드 실패: $_"
-    Read-Host "Enter를 눌러 종료"
+    Write-Err "?낅줈???ㅽ뙣: $_"
+    Read-Host "Enter瑜??뚮윭 醫낅즺"
     exit 1
 }
 
-# ── 완료 ──
+# ?? ?꾨즺 ??
 Write-Host ""
 Write-Host "  ==============================================" -ForegroundColor Green
-Write-Host "    B2CPC v$version 배포 완료!" -ForegroundColor White
+Write-Host "    B2CPC v$version 諛고룷 ?꾨즺!" -ForegroundColor White
 Write-Host "  ==============================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  빌드 시간: $([math]::Round($buildTime))초" -ForegroundColor Gray
-Write-Host "  파일 크기: ${exeSize}MB" -ForegroundColor Gray
-Write-Host "  업로드 시간: $([math]::Round($uploadTime))초" -ForegroundColor Gray
+Write-Host "  鍮뚮뱶 ?쒓컙: $([math]::Round($buildTime))珥? -ForegroundColor Gray
+Write-Host "  ?뚯씪 ?ш린: ${exeSize}MB" -ForegroundColor Gray
+Write-Host "  ?낅줈???쒓컙: $([math]::Round($uploadTime))珥? -ForegroundColor Gray
 Write-Host ""
-Write-Host "  릴리즈 확인: https://github.com/$owner/$repo/releases/tag/v$version" -ForegroundColor Cyan
-Write-Host "  기존 사용자 앱이 자동으로 업데이트를 감지합니다." -ForegroundColor Gray
+Write-Host "  由대━利??뺤씤: https://github.com/$owner/$repo/releases/tag/v$version" -ForegroundColor Cyan
+Write-Host "  湲곗〈 ?ъ슜???깆씠 ?먮룞?쇰줈 ?낅뜲?댄듃瑜?媛먯??⑸땲??" -ForegroundColor Gray
 Write-Host ""
-Read-Host "  Enter를 눌러 종료"
+Read-Host "  Enter瑜??뚮윭 醫낅즺"
