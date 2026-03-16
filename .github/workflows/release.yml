@@ -28,29 +28,26 @@ jobs:
           Expand-Archive -Path $wixZip -DestinationPath $wixExtracted
           echo "$wixExtracted" >> $env:GITHUB_PATH
 
-      - name: Grant Execute Permission for Gradlew
-        run: chmod +x gradlew
-        shell: bash
-
       - name: Extract Tag Name
         id: extract_tag
-        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Build MSI Package
-        run: ./gradlew packageMsi -PappVersion=${{ env.TAG_NAME }}
-        shell: bash
-
-      - name: Find MSI File
-        id: find_msi
         run: |
-          $msiPath = Get-ChildItem -Path build\compose\binaries\main\msi -Filter *.msi | Select-Object -First 1 -ExpandProperty FullName
-          echo "MSI_PATH=$msiPath" >> $env:GITHUB_ENV
+          $TAG_NAME = $env:GITHUB_REF -replace 'refs/tags/',''
+          echo "TAG_NAME=$TAG_NAME" >> $env:GITHUB_ENV
+
+      - name: Build EXE Package
+        run: .\gradlew.bat packageExe -PappVersion=${{ env.TAG_NAME }}
+        shell: cmd
+
+      - name: Find EXE File
+        id: find_exe
+        run: |
+          $exePath = (Get-ChildItem -Path build\compose\binaries\main\exe -Filter *.exe | Select-Object -First 1).FullName
+          echo "EXE_PATH=$exePath" >> $env:GITHUB_ENV
 
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.MSI_PATH }}
+          files: ${{ env.EXE_PATH }}
           draft: false
           prerelease: false
           generate_release_notes: true

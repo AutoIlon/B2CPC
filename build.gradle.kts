@@ -62,7 +62,7 @@ compose.desktop {
         mainClass = "com.b2c.b2cpc.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
+            targetFormats(TargetFormat.Exe, TargetFormat.Dmg, TargetFormat.Deb)
             packageName = "B2CPC"
             packageVersion = findProperty("appVersion")?.toString() ?: "1.0.0"
             modules("java.sql", "java.naming", "java.management")
