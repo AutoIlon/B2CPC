@@ -1,9 +1,0 @@
-﻿
-> Configure project :
-The Provider.forUseAtConfigurationTime method has been deprecated. This is scheduled to be removed in Gradle 9.0. Simply remove the call. Consult the upgrading guide for further information: https://docs.gradle.org/8.5/userguide/upgrading_version_7.html#for_use_at_configuration_time_deprecation
-
-> Task :checkKotlinGradlePluginConfigurationErrors
-> Task :generateComposeResClass UP-TO-DATE
-
-> Task :compileKotlinJvm FAILED
-3 actionable tasks: 2 executed, 1 up-to-date

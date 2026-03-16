@@ -1,0 +1,11 @@
+# Build output
+build/
+.gradle/
+gradle-*.zip
+
+# IDE files
+.idea/
+*.iml
+
+# Local env files
+*.local
