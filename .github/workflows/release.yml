@@ -1,4 +1,4 @@
-name: Build and Release Windows MSI
+name: Build and Release Windows EXE
 
 on:
   push:
@@ -19,30 +19,24 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
-      - name: Download WiX Toolset
-        run: |
-          $wixUrl = "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip"
-          $wixZip = "$env:RUNNER_TEMP\wix.zip"
-          $wixExtracted = "C:\wix"
-          Invoke-WebRequest -Uri $wixUrl -OutFile $wixZip
-          Expand-Archive -Path $wixZip -DestinationPath $wixExtracted
-          echo "$wixExtracted" >> $env:GITHUB_PATH
-
-      - name: Extract Tag Name
+      - name: Extract Tag Name (Remove 'v')
         id: extract_tag
         run: |
-          $TAG_NAME = $env:GITHUB_REF -replace 'refs/tags/',''
-          echo "TAG_NAME=$TAG_NAME" >> $env:GITHUB_ENV
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          TAG_NAME=${TAG_NAME#v}
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+        shell: bash
 
       - name: Build EXE Package
-        run: .\gradlew.bat packageExe -PappVersion=${{ env.TAG_NAME }}
-        shell: cmd
+        run: ./gradlew packageExe -PappVersion=${{ env.TAG_NAME }}
+        shell: bash
 
       - name: Find EXE File
         id: find_exe
         run: |
-          $exePath = (Get-ChildItem -Path build\compose\binaries\main\exe -Filter *.exe | Select-Object -First 1).FullName
-          echo "EXE_PATH=$exePath" >> $env:GITHUB_ENV
+          EXE_PATH=$(find build/compose/binaries -name "*.exe" | head -n 1)
+          echo "EXE_PATH=$EXE_PATH" >> $GITHUB_ENV
+        shell: bash
 
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
